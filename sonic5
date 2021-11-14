@@ -1,0 +1,105 @@
+ sleep 1
+  level += 1
+end
+sleep 4
+cue :dreams
+8.times do
+  drums 1, 1, true
+end
+
+10.times do
+  m = choose [shuffle(:within_dreams), :within_dreams, :dreams_within]
+  cue m
+  drums 2, 1, true
+end
+
+6.times do
+  m = choose [shuffle("within") + "_dreams", :within_dreams.shuffle, "dreams_" + shuffle("within")]
+  cue m
+  drums 2
+end
+
+live_loop :drums do
+  8.times do |i|
+    drums 1
+  end
+  
+  16.times do |i|
+    cue " " * rand_i(32)
+    at 1 do
+      cue "  " * i
+    end
+    drums 2
+  end
+end
+
+define :hihat do
+use_synth :pnoise
+with_fx :hpf, cutoff: 120 do
+play release: 0.01, amp: 13
+end
+end
+
+live_loop :hihat_loop do
+divisors = ring 2, 4, 2, 2, 2, 2, 2, 6
+divisors.tick.times do
+hihat
+sleep 1.0 / divisors.look
+end
+end
+
+live_loop :snare_loop do
+sleep ring(2.5, 3)[tick]
+with_fx :lpf, cutoff: 100 do
+sample :sn_dub, sustain: 0, release: 0.05, amp: 3
+end
+sleep ring(1.5, 1)[look]
+end
+
+define :bassdrum do |note1, duration, note2 = note1|
+use_synth :sine
+with_fx :hpf, cutoff: 100 do
+play note1 + 24, amp: 40, release: 0.01
+end
+with_fx :distortion, distort: 0.1, mix: 0.3 do
+with_fx :lpf, cutoff: 26 do
+with_fx :hpf, cutoff: 55 do
+bass = play note1, amp: 85, release: duration, note_slide: duration
+control bass, note: note2
+end
+end
+end
+sleep duration
+end
+
+live_loop :bassdrum_schleife do
+bassdrum 36, 1.5
+if bools(0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0)[tick]
+bassdrum 36, 0.5, 40
+bassdrum 38, 1, 10
+else
+bassdrum 36, 1.5
+end
+bassdrum 36, 1.0, ring(10, 10, 10, 40)[look]
+end
+
+
+chord_1 = chord :c4, :maj9, num_octaves: 2
+chord_2 = chord :es4, :maj9, num_octaves: 2
+chord_3 = chord :b3, :maj9, num_octaves: 2
+chord_4 = chord :d4, :maj9, num_octaves: 2
+
+chord_low_1 = chord :c2, :maj9
+chord_low_2 = chord :es2, :maj9
+chord_low_3 = chord :b1, :maj9
+chord_low_4 = chord :d2, :maj9
+
+chord_high = chord_1
+chord_low = chord_low_1
+
+live_loop :chord_selector, delay: -0.5 do
+chord_high = (knit(chord_1, 2, chord_2, 2, chord_3, 4,chord_4, 4)).tick
+chord_low = (knit(chord_low_1, 2, chord_low_2, 2, chord_low_3, 4, chord_low_4, 4)).look
+sleep 8
+end
+
